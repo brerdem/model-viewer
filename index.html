@@ -9,27 +9,63 @@
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
     ></script>
-    <style>
-      html,
-      body {
-        width: 100vw;
-        height: 100vh;
-        margin: 0;
-        padding: 0;
-      }
+    <link rel="stylesheet" href="style.css" />
+    <script type="module">
+      const modelViewer = document.querySelector("model-viewer");
 
-      model-viewer {
-        width: 100%;
-        height: 100vh;
-        background-image: radial-gradient(white, #aaaaaa);
-      }
-      .logo {
-        position: absolute;
-        left: 30px;
-        top: 30px;
-        z-index: 1;
-      }
-    </style>
+      modelViewer.addEventListener("load", () => {
+        // const material = modelViewer.model.materials[0];
+        document.querySelector("#material-list").innerHTML =
+          modelViewer.model.materials
+            .map((x) => "<li>" + x.name + "</li>")
+            .join("");
+
+        const material = modelViewer.model.getMaterialByName("Material #135");
+        let existingTexture =
+          material.pbrMetallicRoughness["baseColorTexture"].texture;
+
+        console.log("existingTexture :>> ", existingTexture);
+
+        console.log(
+          "modelViewer.model.materials :>> ",
+          modelViewer.model.materials
+        );
+
+        const createAndApplyTexture = async (channel, image) => {
+          const texture = await modelViewer.createTexture(image);
+          if (channel.includes("base") || channel.includes("metallic")) {
+            material.pbrMetallicRoughness[channel].setTexture(texture);
+          } else {
+            material[channel].setTexture(texture);
+          }
+        };
+
+        const changeColor = (event) => {
+          console.log(
+            'event.target.getAttribute("data-img") :>> ',
+            event.target.getAttribute("data-img")
+          );
+          createAndApplyTexture(
+            "baseColorTexture",
+            event.target.getAttribute("data-img")
+          );
+        };
+
+        const resetTexture = () => {
+          material.pbrMetallicRoughness["baseColorTexture"].setTexture(
+            existingTexture
+          );
+        };
+
+        document
+          .querySelectorAll("div.texture-button")
+          .forEach((elem) => elem.addEventListener("click", changeColor));
+
+        document
+          .querySelector("#reset")
+          .addEventListener("click", resetTexture);
+      });
+    </script>
   </head>
   <body>
     <svg width="119" height="17" viewBox="0 0 119 17" class="logo">
@@ -40,13 +76,42 @@
         ></path>
       </g>
     </svg>
+    <div class="info">
+      <div class="texture-container">
+        <div
+          class="texture-button"
+          data-img="HALIA S1 YUKSEK SIRTLI BERJER AA/textures/beyazmeşemasif.jpg"
+          style="background-color: #fffaeb"
+        ></div>
+
+        <span style="margin-top: 1rem">Kirli Beyaz</span>
+        <button id="reset">Reset</button>
+      </div>
+      <div class="texture-container">
+        <div
+          class="texture-button"
+          data-img="HALIA S1 YUKSEK SIRTLI BERJER AA/textures/kumas2.png"
+          style="background-color: #a9adaf"
+        ></div>
+        <span style="margin-top: 1rem">Light Grey</span>
+      </div>
+    </div>
+    <ul id="material-list"></ul>
     <model-viewer
       alt="This is a sofa"
-      src="sofa2.glb"
+      src="HALIA S1 YUKSEK SIRTLI BERJER AA/model.glb"
       environment-image="moon_1k.hdr"
-      shadow-intensity="2"
+      shadow-intensity="1.5"
+      shadow-softness="0.8"
       camera-controls
       touch-action="pan-y"
-    ></model-viewer>
+      camera-orbit="0deg 90deg 4m"
+      min-camera-orbit="auto 0deg auto"
+      max-camera-orbit="auto 90deg auto"
+      exposure="1"
+      auto-rotate
+      disable-pan
+    >
+    </model-viewer>
   </body>
 </html>
